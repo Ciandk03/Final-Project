@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "373639621346",
+    "firebase_url": "https://trade-e594a-default-rtdb.firebaseio.com",
+    "project_id": "trade-e594a",
+    "storage_bucket": "trade-e594a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373639621346:android:46b31048b1fd8529114cbb",
+        "android_client_info": {
+          "package_name": "edu.uga.cs.finalproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpk_r0aFhdVOguijlkfQ3-Zwblxn4gbuo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

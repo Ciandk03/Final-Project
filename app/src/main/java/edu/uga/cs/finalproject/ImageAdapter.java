@@ -25,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
+public class aImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
 
     // Temporary list: drawable resource IDs
     // TODO: Replace with real image objects
