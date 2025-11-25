@@ -62,7 +62,7 @@ public class CategoryListFragment extends Fragment {
 
     private void loadCategories() {
         FirebaseDatabase.getInstance().getReference("categories")
-                .orderByChild("name") // ✅ ensures alphabetical order
+                .orderByChild("name")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -78,7 +78,6 @@ public class CategoryListFragment extends Fragment {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        // Optionally log or show an error message
                     }
                 });
     }
