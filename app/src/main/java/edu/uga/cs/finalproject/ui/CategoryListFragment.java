@@ -1,11 +1,6 @@
+
 package edu.uga.cs.finalproject.ui;
 
-/*
-
- - Loads categories (placeholder list for now)
- - Clicking a category navigates to ItemListFragment with categoryId/name
- - FloatingActionButton to add a new category
-*/
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -18,13 +13,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import edu.uga.cs.finalproject.R;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import edu.uga.cs.finalproject.adapters.CategoryAdapter;
-import edu.uga.cs.finalproject.models.Category;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import edu.uga.cs.finalproject.R;
+import edu.uga.cs.finalproject.adapters.CategoryAdapter;
+import edu.uga.cs.finalproject.models.Category;
 
 public class CategoryListFragment extends Fragment {
 
@@ -59,13 +60,25 @@ public class CategoryListFragment extends Fragment {
         loadCategories();
     }
 
-    private void loadCategories(){
-        // TODO: Replace placeholder data with Firestore query:
-        categories.clear();
-        Category c1 = new Category(); c1.id = "transport"; c1.name = "Transportation";
-        Category c2 = new Category(); c2.id = "household"; c2.name = "Household";
-        Category c3 = new Category(); c3.id = "clothing"; c3.name = "Clothing";
-        categories.add(c1); categories.add(c2); categories.add(c3);
-        adapter.notifyDataSetChanged();
+    private void loadCategories() {
+        FirebaseDatabase.getInstance().getReference("categories")
+                .orderByChild("name")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        categories.clear();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            Category theC = child.getValue(Category.class);
+                            if (theC != null) {
+                                categories.add(theC);
+                            }
+                        }
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
     }
 }
