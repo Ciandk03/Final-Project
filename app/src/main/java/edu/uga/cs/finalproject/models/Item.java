@@ -1,37 +1,125 @@
 package edu.uga.cs.finalproject.models;
 
-import java.util.Date;
-import java.util.List;
-
-/*
- * Defines the data model for an 'Item' in the TradeIt application. An Item object is a POJO
- * (Plain Old Java Object) that represents a product a user has listed for sale or to be given away.
- * This class is used to serialize and deserialize data from Google's Firebase Realtime Database.
- *
- * It includes fields for the item's details (title, description, price) and metadata (who posted
- * it, posting date, current status).
- *
- * TODO:
- * - The project requires items to be sorted by posting date (newest to oldest). The `createdAt`
- *   field is included for this purpose. The actual sorting logic will be implemented in the Firebase
- *   query within the UI layer (e.g., in ItemListFragment), not in this model class.
- * - When a user agrees to purchase an item, its status should be updated to "pending". This logic
- *   will be handled in the UI layer (e.g., in ItemDetailFragment) by updating this object in Firebase.
- * - For Firebase to automatically map this POJO, ensure the field names here match the keys in your
- *   Realtime Database. If they differ, use annotations like @PropertyName.
+/**
+ * Represents an item listed for sale or donation.
+ * User Story 8: Name, date/time, category, posted by, price/free.
  */
 public class Item {
-    public String id;
-    public String title;
-    public String description;
-    public long priceCents;
-    public boolean isFree;
-    public String categoryId;
-    public String postedBy;
-    public String postedByName;
-    public List<String> images; // urls
-    public String status; // active, pending, completed
-    public String transactionId;
-    public Date createdAt;
-    public Item() {}
+    private String id;
+    private String name; // "title" in previous version, "name" in requirements
+    private String description;
+    private double price; // Storing as double for simplicity, or could use cents
+    private boolean isFree;
+    private String categoryId;
+    private String categoryName; // Denormalized for display
+    private String sellerId; // "postedBy"
+    private String sellerName;
+    private long createdAt; // timestamp
+    private String status; // "AVAILABLE", "PENDING", "SOLD"
+
+    public Item() {
+    }
+
+    public Item(String id, String name, String description, double price, boolean isFree, String categoryId,
+            String categoryName, String sellerId, String sellerName) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.isFree = isFree;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
+        this.sellerId = sellerId;
+        this.sellerName = sellerName;
+        this.createdAt = System.currentTimeMillis();
+        this.status = "AVAILABLE";
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public boolean isFree() {
+        return isFree;
+    }
+
+    public void setFree(boolean free) {
+        isFree = free;
+    }
+
+    public String getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(String sellerId) {
+        this.sellerId = sellerId;
+    }
+
+    public String getSellerName() {
+        return sellerName;
+    }
+
+    public void setSellerName(String sellerName) {
+        this.sellerName = sellerName;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
