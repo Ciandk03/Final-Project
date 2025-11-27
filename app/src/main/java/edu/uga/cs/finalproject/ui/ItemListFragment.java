@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -31,72 +32,92 @@ import edu.uga.cs.finalproject.models.Item;
 
 public class ItemListFragment extends Fragment {
 
-    private RecyclerView recycler;
-    private ItemAdapter adapter;
-    private List<Item> items = new ArrayList<>();
-    private String categoryId, categoryName;
-    private DatabaseReference mDatabase;
+    private RecyclerView theRecycler;
+    private ItemAdapter theAdapter;
+    private List<Item> theItems = new ArrayList<>();
+    private String theCategoryId, theCategoryName;
+    private DatabaseReference theDatabase;
 
-    public ItemListFragment() {
+    public ItemListFragment() {}
+
+    @Override
+    public View onCreateView(LayoutInflater theInflater, ViewGroup theContainer,
+                             Bundle theSavedInstanceState) {
+        return theInflater.inflate(R.layout.fragment_item_list, theContainer, false);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_item_list, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View theView, @Nullable Bundle theSavedInstanceState) {
         if (getArguments() != null) {
-            categoryId = getArguments().getString("categoryId");
-            categoryName = getArguments().getString("categoryName");
+            theCategoryId = getArguments().getString("categoryId");
+            theCategoryName = getArguments().getString("categoryName");
         }
 
-        mDatabase = FirebaseDatabase.getInstance().getReference("items");
+        theDatabase = FirebaseDatabase.getInstance().getReference("items");
 
-        recycler = view.findViewById(R.id.itemRecycler);
-        recycler.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ItemAdapter(items, item -> {
-            Bundle b = new Bundle();
-            b.putString("itemId", item.getId());
-            Navigation.findNavController(view).navigate(R.id.action_itemList_to_itemDetail, b);
+        theRecycler = theView.findViewById(R.id.itemRecycler);
+        theRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        String theCurrentUserId = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
+
+        theAdapter = new ItemAdapter(theItems, theCurrentUserId, new ItemAdapter.theOnItemAction() {
+            @Override
+            public void onClick(Item theItem) {
+                Bundle theBundle = new Bundle();
+                theBundle.putString("itemId", theItem.getId());
+                Navigation.findNavController(theView).navigate(R.id.action_itemList_to_itemDetail, theBundle);
+            }
+
+            @Override
+            public void onDelete(Item theItem) {
+                theDatabase.child(theItem.getId()).removeValue()
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(getContext(), "Item deleted", Toast.LENGTH_SHORT).show();
+                            theItems.remove(theItem);
+                            theAdapter.notifyDataSetChanged();
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(getContext(), "Failed to delete item: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
+            }
         });
-        recycler.setAdapter(adapter);
 
-        FloatingActionButton fab = view.findViewById(R.id.addItemFab);
-        fab.setOnClickListener(v -> {
-            Bundle b = new Bundle();
-            b.putString("categoryId", categoryId);
-            b.putString("categoryName", categoryName);
-            Navigation.findNavController(v).navigate(R.id.action_itemList_to_addItem, b);
+        theRecycler.setAdapter(theAdapter);
+
+        FloatingActionButton theFab = theView.findViewById(R.id.addItemFab);
+        theFab.setOnClickListener(theV -> {
+            Bundle theBundle = new Bundle();
+            theBundle.putString("categoryId", theCategoryId);
+            theBundle.putString("categoryName", theCategoryName);
+            Navigation.findNavController(theV).navigate(R.id.action_itemList_to_addItem, theBundle);
         });
 
         loadItems();
     }
 
     private void loadItems() {
-        Query query = mDatabase.orderByChild("categoryId").equalTo(categoryId);
-        query.addValueEventListener(new ValueEventListener() {
+        Query theQuery = theDatabase.orderByChild("categoryId").equalTo(theCategoryId);
+        theQuery.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                items.clear();
-                for (DataSnapshot child : snapshot.getChildren()) {
-                    Item item = child.getValue(Item.class);
-                    // Filter by status if needed, e.g., only "AVAILABLE"
-                    if (item != null && "AVAILABLE".equals(item.getStatus())) {
-                        items.add(item);
+            public void onDataChange(@NonNull DataSnapshot theSnapshot) {
+                theItems.clear();
+                for (DataSnapshot theChild : theSnapshot.getChildren()) {
+                    Item theItem = theChild.getValue(Item.class);
+                    if (theItem != null && "AVAILABLE".equals(theItem.getStatus())) {
+                        theItems.add(theItem);
                     }
                 }
-                // Sort by date descending (Newest first)
-                Collections.sort(items, (o1, o2) -> Long.compare(o2.getCreatedAt(), o1.getCreatedAt()));
-                adapter.notifyDataSetChanged();
+                Collections.sort(theItems, (theO1, theO2) -> Long.compare(theO2.getCreatedAt(), theO1.getCreatedAt()));
+                theAdapter.notifyDataSetChanged();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError theError) {
                 Toast.makeText(getContext(), "Failed to load items", Toast.LENGTH_SHORT).show();
             }
         });
     }
 }
+

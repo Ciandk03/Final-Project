@@ -29,9 +29,19 @@
             android:layout_height="wrap_content"
             android:textColor="?attr/colorPrimary"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/buttonDeleteItem"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="$20.00" />
+
+        <ImageButton
+            android:id="@+id/buttonDeleteItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_menu_delete"
+            android:contentDescription="Delete item"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/cardSeller"
@@ -55,3 +65,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
+
