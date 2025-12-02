@@ -23,6 +23,8 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
@@ -32,7 +34,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     private List<Integer> images;
 
     public ImageAdapter(List<Integer> images) {
-        this.images = images;
+        this.images = images != null ? images : new ArrayList<>();
     }
 
     @NonNull
@@ -53,6 +55,15 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     @Override
     public int getItemCount() {
         return images.size();
+    }
+
+    public List<Integer> getImages() {
+        return new ArrayList<>(images);
+    }
+
+    public void setImages(List<Integer> newImages) {
+        this.images = newImages != null ? newImages : new ArrayList<>();
+        notifyDataSetChanged();
     }
 
     // Holds UI elements for each row

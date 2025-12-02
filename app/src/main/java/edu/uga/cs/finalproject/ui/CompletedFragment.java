@@ -42,12 +42,14 @@ public class CompletedFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_completed, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -55,12 +57,40 @@ public class CompletedFragment extends Fragment {
         emptyView = view.findViewById(R.id.emptyView);
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new TransactionAdapter(transactions, currentUser != null ? currentUser.getUid() : "", null);
+        adapter = new TransactionAdapter(transactions,
+                currentUser != null ? currentUser.getUid() : "",
+                null);
         recycler.setAdapter(adapter);
 
-        if (currentUser != null) {
-            loadTransactions();
+        if (savedInstanceState != null) {
+            transactions.clear();
+            transactions.addAll((List<Transaction>) savedInstanceState.getSerializable("savedTransactions"));
+            adapter.notifyDataSetChanged();
+
+            int pos = savedInstanceState.getInt("scrollPosition", 0);
+            recycler.scrollToPosition(pos);
+
+            // Handle empty view visibility
+            if (transactions.isEmpty()) {
+                emptyView.setVisibility(View.VISIBLE);
+                recycler.setVisibility(View.GONE);
+            } else {
+                emptyView.setVisibility(View.GONE);
+                recycler.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (currentUser != null) {
+                loadTransactions();
+            }
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable("savedTransactions", new ArrayList<>(transactions));
+        int pos = ((LinearLayoutManager) recycler.getLayoutManager()).findFirstVisibleItemPosition();
+        outState.putInt("scrollPosition", pos);
     }
 
     private void loadTransactions() {
@@ -77,7 +107,8 @@ public class CompletedFragment extends Fragment {
                         }
                     }
                 }
-                Collections.sort(transactions, (o1, o2) -> Long.compare(o2.getCompletedAt(), o1.getCompletedAt()));
+                Collections.sort(transactions,
+                        (o1, o2) -> Long.compare(o2.getCompletedAt(), o1.getCompletedAt()));
 
                 if (transactions.isEmpty()) {
                     emptyView.setVisibility(View.VISIBLE);

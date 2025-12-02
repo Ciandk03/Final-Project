@@ -22,6 +22,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.theVH> {
     public interface theOnItemAction {
         void onClick(Item theItem);
         void onDelete(Item theItem);
+        void onEdit(Item theItem); // existing
+        void onBuy(Item theItem);  // NEW
     }
 
     private List<Item> theItems;
@@ -50,13 +52,26 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.theVH> {
         theHolder.theSeller.setText("Posted by: " + (theItem.getSellerName() != null ? theItem.getSellerName() : "Unknown"));
         theHolder.theDate.setText(theSdf.format(new Date(theItem.getCreatedAt())));
 
-        theHolder.itemView.setOnClickListener(theV -> theActionListener.onClick(theItem));
+        // Handle click differently for buyer vs seller
+        theHolder.itemView.setOnClickListener(theV -> {
+            if (theCurrentUserId != null && !theCurrentUserId.equals(theItem.getSellerId())) {
+                // Buyer clicked → trigger buy/accept
+                theActionListener.onBuy(theItem);
+            } else {
+                // Seller clicked → normal detail view
+                theActionListener.onClick(theItem);
+            }
+        });
 
         if (theCurrentUserId != null && theCurrentUserId.equals(theItem.getSellerId())) {
             theHolder.theDeleteBtn.setVisibility(View.VISIBLE);
             theHolder.theDeleteBtn.setOnClickListener(theV -> theActionListener.onDelete(theItem));
+
+            theHolder.theEditBtn.setVisibility(View.VISIBLE);
+            theHolder.theEditBtn.setOnClickListener(theV -> theActionListener.onEdit(theItem));
         } else {
             theHolder.theDeleteBtn.setVisibility(View.GONE);
+            theHolder.theEditBtn.setVisibility(View.GONE);
         }
     }
 
@@ -67,7 +82,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.theVH> {
 
     static class theVH extends RecyclerView.ViewHolder {
         TextView theTitle, thePrice, theSeller, theDate;
-        ImageButton theDeleteBtn;
+        ImageButton theDeleteBtn, theEditBtn;
 
         theVH(View theView) {
             super(theView);
@@ -76,7 +91,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.theVH> {
             theSeller = theView.findViewById(R.id.cardSeller);
             theDate = theView.findViewById(R.id.cardDate);
             theDeleteBtn = theView.findViewById(R.id.buttonDeleteItem);
+            theEditBtn = theView.findViewById(R.id.buttonEditItem);
         }
     }
 }
-

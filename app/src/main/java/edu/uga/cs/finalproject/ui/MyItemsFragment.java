@@ -58,25 +58,10 @@ public class MyItemsFragment extends Fragment {
         emptyView = view.findViewById(R.id.emptyView);
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new ItemAdapter(items, currentUser.getUid(), new ItemAdapter.theOnItemAction() {
-            @Override
-            public void onClick(Item item) {
-                Bundle b = new Bundle();
-                b.putString("itemId", item.getId());
-                Navigation.findNavController(view).navigate(R.id.action_global_itemDetailFragment, b);
-            }
-
-            @Override
-            public void onDelete(Item item) {
-                // Delete the item from Firebase
-                if (item.getId() != null) {
-                    mDatabase.child(item.getId()).removeValue()
-                            .addOnSuccessListener(aVoid -> Toast
-                                    .makeText(getContext(), "Item deleted successfully", Toast.LENGTH_SHORT).show())
-                            .addOnFailureListener(e -> Toast
-                                    .makeText(getContext(), "Failed to delete item", Toast.LENGTH_SHORT).show());
-                }
-            }
+        adapter = new ItemAdapter(items, item -> {
+            Bundle b = new Bundle();
+            b.putString("itemId", item.getId());
+            Navigation.findNavController(view).navigate(R.id.action_global_itemDetailFragment, b);
         });
         recycler.setAdapter(adapter);
 

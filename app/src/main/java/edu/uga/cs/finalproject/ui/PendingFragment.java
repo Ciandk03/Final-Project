@@ -38,17 +38,18 @@ public class PendingFragment extends Fragment {
     private DatabaseReference mDatabase;
     private FirebaseUser currentUser;
 
-    public PendingFragment() {
-    }
+    public PendingFragment() {}
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_pending, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -56,13 +57,39 @@ public class PendingFragment extends Fragment {
         emptyView = view.findViewById(R.id.emptyView);
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new TransactionAdapter(transactions, currentUser != null ? currentUser.getUid() : "",
+        adapter = new TransactionAdapter(transactions,
+                currentUser != null ? currentUser.getUid() : "",
                 this::confirmTransaction);
         recycler.setAdapter(adapter);
 
-        if (currentUser != null) {
-            loadTransactions();
+        if (savedInstanceState != null) {
+            transactions.clear();
+            transactions.addAll((List<Transaction>) savedInstanceState.getSerializable("savedPendingTransactions"));
+            adapter.notifyDataSetChanged();
+
+            int pos = savedInstanceState.getInt("scrollPosition", 0);
+            recycler.scrollToPosition(pos);
+
+            if (transactions.isEmpty()) {
+                emptyView.setVisibility(View.VISIBLE);
+                recycler.setVisibility(View.GONE);
+            } else {
+                emptyView.setVisibility(View.GONE);
+                recycler.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (currentUser != null) {
+                loadTransactions();
+            }
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable("savedPendingTransactions", new ArrayList<>(transactions));
+        int pos = ((LinearLayoutManager) recycler.getLayoutManager()).findFirstVisibleItemPosition();
+        outState.putInt("scrollPosition", pos);
     }
 
     private void loadTransactions() {
@@ -79,7 +106,8 @@ public class PendingFragment extends Fragment {
                         }
                     }
                 }
-                Collections.sort(transactions, (o1, o2) -> Long.compare(o2.getInitiatedAt(), o1.getInitiatedAt()));
+                Collections.sort(transactions,
+                        (o1, o2) -> Long.compare(o2.getInitiatedAt(), o1.getInitiatedAt()));
 
                 if (transactions.isEmpty()) {
                     emptyView.setVisibility(View.VISIBLE);
@@ -93,6 +121,7 @@ public class PendingFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(getContext(), "Failed to load transactions", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -109,9 +138,7 @@ public class PendingFragment extends Fragment {
             t.setStatus("COMPLETED");
             t.setCompletedAt(System.currentTimeMillis());
 
-            // Also update item status to SOLD if needed, but ItemDetailFragment sets it to
-            // PENDING initially.
-            // We can set it to SOLD here.
+            // Update item status to SOLD
             mDatabase.child("items").child(t.getItemId()).child("status").setValue("SOLD");
         }
 
@@ -120,3 +147,4 @@ public class PendingFragment extends Fragment {
                         aVoid -> Toast.makeText(getContext(), "Transaction updated", Toast.LENGTH_SHORT).show());
     }
 }
+

@@ -1,4 +1,3 @@
-
 package edu.uga.cs.finalproject.ui;
 
 import android.os.Bundle;
@@ -12,10 +11,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -35,13 +36,14 @@ public class CategoryListFragment extends Fragment {
     private CategoryAdapter adapter;
     private List<Category> categories = new ArrayList<>();
     private DatabaseReference mDatabase;
+    private Button logoutButton; // NEW
 
     public CategoryListFragment() {
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_category_list, container, false);
     }
 
@@ -57,7 +59,6 @@ public class CategoryListFragment extends Fragment {
         adapter = new CategoryAdapter(categories, currentUserId, new CategoryAdapter.OnCategoryAction() {
             @Override
             public void onClick(Category category) {
-                // on click -> navigate to ItemListFragment with args
                 Bundle b = new Bundle();
                 b.putString("categoryId", category.getId());
                 b.putString("categoryName", category.getName());
@@ -66,13 +67,9 @@ public class CategoryListFragment extends Fragment {
 
             @Override
             public void onEdit(Category category) {
-                // Navigate to edit category fragment or dialog
                 Bundle b = new Bundle();
                 b.putString("categoryId", category.getId());
                 b.putString("categoryName", category.getName());
-                // You may need to create an edit action in your nav graph
-                // Navigation.findNavController(view).navigate(R.id.action_category_to_editCategory,
-                // b);
                 Toast.makeText(getContext(), "Edit not implemented yet", Toast.LENGTH_SHORT).show();
             }
 
@@ -85,6 +82,19 @@ public class CategoryListFragment extends Fragment {
 
         FloatingActionButton fab = view.findViewById(R.id.addCategoryFab);
         fab.setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.action_category_to_addCategory));
+
+        // NEW: Logout button setup
+        logoutButton = view.findViewById(R.id.buttonLogout);
+        logoutButton.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            Navigation.findNavController(v).navigate(R.id.action_categoryListFragment_to_loginFragment);
+        });
+
+        // Guard: if user is not logged in, redirect immediately
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Navigation.findNavController(view).navigate(R.id.loginFragment);
+        }
 
         loadCategories();
     }
@@ -122,3 +132,4 @@ public class CategoryListFragment extends Fragment {
         void onCheck(boolean isEmpty);
     }
 }
+

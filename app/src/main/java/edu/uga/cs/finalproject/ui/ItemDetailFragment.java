@@ -17,7 +17,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -40,19 +39,21 @@ public class ItemDetailFragment extends Fragment {
     private DatabaseReference mDatabase;
     private FirebaseUser currentUser;
 
-    public ItemDetailFragment() {
-    }
+    public ItemDetailFragment() {}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_item_detail, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        if (getArguments() != null)
+        super.onViewCreated(view, savedInstanceState);
+
+        if (getArguments() != null) {
             itemId = getArguments().getString("itemId");
+        }
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -66,11 +67,52 @@ public class ItemDetailFragment extends Fragment {
         deleteBtn = view.findViewById(R.id.deleteButton);
         sellerActionsLayout = view.findViewById(R.id.sellerActionsLayout);
 
-        loadItem();
+        if (savedInstanceState != null) {
+            itemId = savedInstanceState.getString("savedItemId", itemId);
+            String name = savedInstanceState.getString("savedItemName");
+            String desc = savedInstanceState.getString("savedItemDesc");
+            double price = savedInstanceState.getDouble("savedItemPrice", 0.0);
+            boolean isFree = savedInstanceState.getBoolean("savedItemFree", false);
+            String sellerName = savedInstanceState.getString("savedItemSellerName");
+            String sellerId = savedInstanceState.getString("savedItemSellerId");
+            String status = savedInstanceState.getString("savedItemStatus");
+
+            if (name != null) {
+                item = new Item();
+                item.setId(itemId);
+                item.setName(name);
+                item.setDescription(desc);
+                item.setPrice(price);
+                item.setFree(isFree);
+                item.setSellerName(sellerName);
+                item.setSellerId(sellerId);
+                item.setStatus(status);
+                updateUI();
+            } else {
+                loadItem();
+            }
+        } else {
+            loadItem();
+        }
 
         agreeBtn.setOnClickListener(v -> initiateTransaction());
         editBtn.setOnClickListener(v -> showEditDialog());
         deleteBtn.setOnClickListener(v -> deleteItem());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedItemId", itemId);
+        if (item != null) {
+            outState.putString("savedItemName", item.getName());
+            outState.putString("savedItemDesc", item.getDescription());
+            outState.putDouble("savedItemPrice", item.getPrice());
+            outState.putBoolean("savedItemFree", item.isFree());
+            outState.putString("savedItemSellerName", item.getSellerName());
+            outState.putString("savedItemSellerId", item.getSellerId());
+            outState.putString("savedItemStatus", item.getStatus());
+        }
     }
 
     private void loadItem() {
@@ -98,11 +140,9 @@ public class ItemDetailFragment extends Fragment {
 
         if (currentUser != null) {
             if (currentUser.getUid().equals(item.getSellerId())) {
-                // Seller view
                 agreeBtn.setVisibility(View.GONE);
                 sellerActionsLayout.setVisibility(View.VISIBLE);
             } else {
-                // Buyer view
                 sellerActionsLayout.setVisibility(View.GONE);
                 if ("AVAILABLE".equals(item.getStatus())) {
                     agreeBtn.setVisibility(View.VISIBLE);
@@ -114,8 +154,7 @@ public class ItemDetailFragment extends Fragment {
     }
 
     private void initiateTransaction() {
-        if (currentUser == null)
-            return;
+        if (currentUser == null) return;
 
         String key = mDatabase.child("transactions").push().getKey();
         Transaction transaction = new Transaction(
@@ -127,14 +166,12 @@ public class ItemDetailFragment extends Fragment {
                 item.getSellerId(),
                 item.getSellerName(),
                 currentUser.getUid(),
-                currentUser.getEmail() // Using email as name for now
+                currentUser.getEmail()
         );
 
-        // Update item status
         item.setStatus("PENDING");
         mDatabase.child("items").child(item.getId()).setValue(item);
 
-        // Save transaction
         mDatabase.child("transactions").child(key).setValue(transaction)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Transaction initiated", Toast.LENGTH_SHORT).show();
@@ -146,13 +183,6 @@ public class ItemDetailFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Edit Item");
 
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.fragment_add_item, null);
-        // Reuse layout but hide category/description if needed or pre-fill
-        // Since we only need to edit Name and Price as per Story 9
-        // "The item’s name and/or price is updated."
-        // "The item’s category, original date/time when posted cannot be changed."
-
-        // Let's create a custom simple layout for editing name/price programmatically
         LinearLayout layout = new LinearLayout(getContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(32, 32, 32, 32);
@@ -165,8 +195,7 @@ public class ItemDetailFragment extends Fragment {
         final EditText priceInput = new EditText(getContext());
         priceInput.setHint("Price");
         priceInput.setText(String.valueOf(item.getPrice()));
-        priceInput.setInputType(
-                android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        priceInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         if (item.isFree()) {
             priceInput.setEnabled(false);
             priceInput.setText("0.0");
@@ -186,13 +215,13 @@ public class ItemDetailFragment extends Fragment {
                 try {
                     item.setPrice(Double.parseDouble(newPriceStr));
                 } catch (NumberFormatException e) {
-                    // ignore
+                    // ignore invalid input
                 }
             }
 
             mDatabase.child("items").child(item.getId()).setValue(item)
-                    .addOnSuccessListener(
-                            aVoid -> Toast.makeText(getContext(), "Item updated", Toast.LENGTH_SHORT).show());
+                    .addOnSuccessListener(aVoid ->
+                            Toast.makeText(getContext(), "Item updated", Toast.LENGTH_SHORT).show());
         });
         builder.setNegativeButton("Cancel", null);
         builder.show();
@@ -218,3 +247,4 @@ public class ItemDetailFragment extends Fragment {
                 .show();
     }
 }
+

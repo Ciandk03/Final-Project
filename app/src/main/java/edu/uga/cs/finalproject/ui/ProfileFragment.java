@@ -28,7 +28,7 @@ public class ProfileFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_profile, container, false);
     }
 
@@ -39,17 +39,26 @@ public class ProfileFragment extends Fragment {
         userEmailTextView = view.findViewById(R.id.textViewUserEmail);
         logoutButton = view.findViewById(R.id.buttonLogout);
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            userEmailTextView.setText(user.getEmail());
+        if (savedInstanceState != null) {
+            String savedEmail = savedInstanceState.getString("savedUserEmail", "");
+            userEmailTextView.setText(savedEmail);
+        } else {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                userEmailTextView.setText(user.getEmail());
+            }
         }
 
-        logoutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FirebaseAuth.getInstance().signOut();
-                Navigation.findNavController(v).navigate(R.id.loginFragment);
-            }
+        logoutButton.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            Navigation.findNavController(v).navigate(R.id.loginFragment);
         });
     }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedUserEmail", userEmailTextView.getText().toString());
+    }
 }
+

@@ -39,8 +39,7 @@ public class RegisterFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_register, container, false);
     }
 
@@ -57,20 +56,26 @@ public class RegisterFragment extends Fragment {
         registerButton = view.findViewById(R.id.buttonRegister);
         loginTextView = view.findViewById(R.id.textViewLogin);
 
-        registerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                registerUser();
-            }
-        });
+        if (savedInstanceState != null) {
+            nameEditText.setText(savedInstanceState.getString("savedName", ""));
+            emailEditText.setText(savedInstanceState.getString("savedEmail", ""));
+            passwordEditText.setText(savedInstanceState.getString("savedPassword", ""));
+        }
 
-        loginTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NavController navController = Navigation.findNavController(v);
-                navController.navigateUp(); // Go back to login
-            }
+        registerButton.setOnClickListener(v -> registerUser());
+
+        loginTextView.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(v);
+            navController.navigateUp(); // Go back to login
         });
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedName", nameEditText.getText().toString());
+        outState.putString("savedEmail", emailEditText.getText().toString());
+        outState.putString("savedPassword", passwordEditText.getText().toString());
     }
 
     private void registerUser() {
@@ -109,7 +114,8 @@ public class RegisterFragment extends Fragment {
                             Navigation.findNavController(getView())
                                     .navigate(R.id.action_registerFragment_to_categoryListFragment);
                         } else {
-                            Toast.makeText(getActivity(), "Registration failed: " + task.getException().getMessage(),
+                            Toast.makeText(getActivity(),
+                                    "Registration failed: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }

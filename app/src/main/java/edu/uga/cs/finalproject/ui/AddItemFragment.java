@@ -46,7 +46,7 @@ public class AddItemFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_add_item, container, false);
     }
 
@@ -70,25 +70,33 @@ public class AddItemFragment extends Fragment {
 
         categoryTextView.setText("Category: " + categoryName);
 
-        freeCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    priceEditText.setText("0.00");
-                    priceEditText.setEnabled(false);
-                } else {
-                    priceEditText.setEnabled(true);
-                    priceEditText.setText("");
-                }
+        freeCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                priceEditText.setText("0.00");
+                priceEditText.setEnabled(false);
+            } else {
+                priceEditText.setEnabled(true);
+                priceEditText.setText("");
             }
         });
 
-        postButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                postItem();
-            }
-        });
+        if (savedInstanceState != null) {
+            nameEditText.setText(savedInstanceState.getString("savedItemName", ""));
+            descriptionEditText.setText(savedInstanceState.getString("savedItemDescription", ""));
+            priceEditText.setText(savedInstanceState.getString("savedItemPrice", ""));
+            freeCheckBox.setChecked(savedInstanceState.getBoolean("savedIsFree", false));
+        }
+
+        postButton.setOnClickListener(v -> postItem());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedItemName", nameEditText.getText().toString());
+        outState.putString("savedItemDescription", descriptionEditText.getText().toString());
+        outState.putString("savedItemPrice", priceEditText.getText().toString());
+        outState.putBoolean("savedIsFree", freeCheckBox.isChecked());
     }
 
     private void postItem() {
@@ -124,23 +132,18 @@ public class AddItemFragment extends Fragment {
         }
 
         String key = mDatabase.push().getKey();
-        Item item = new Item(key, name, description, price, isFree, categoryId, categoryName, currentUser.getUid(),
-                currentUser.getEmail());
+        Item item = new Item(key, name, description, price, isFree, categoryId, categoryName,
+                currentUser.getUid(), currentUser.getEmail());
 
         mDatabase.child(key).setValue(item)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(getContext(), "Item posted", Toast.LENGTH_SHORT).show();
-                        Navigation.findNavController(getView()).navigateUp();
-                    }
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Item posted", Toast.LENGTH_SHORT).show();
+                    Navigation.findNavController(getView()).navigateUp();
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(getContext(), "Failed to post item: " + e.getMessage(), Toast.LENGTH_SHORT)
-                                .show();
-                    }
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to post item: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 }
+

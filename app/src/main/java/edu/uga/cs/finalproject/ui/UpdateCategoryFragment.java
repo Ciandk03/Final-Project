@@ -50,7 +50,17 @@ public class UpdateCategoryFragment extends Fragment {
             theCategoryNameEditText.setText(theCurrentName);
         }
 
+        if (savedInstanceState != null) {
+            theCategoryNameEditText.setText(savedInstanceState.getString("savedCategoryName", ""));
+        }
+
         theUpdateCategoryButton.setOnClickListener(v -> updateCategory());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedCategoryName", theCategoryNameEditText.getText().toString());
     }
 
     private void updateCategory() {
@@ -61,13 +71,15 @@ public class UpdateCategoryFragment extends Fragment {
             return;
         }
 
-        theMDatabase.child(theCategoryId).child("Name").setValue(newName)
+        theMDatabase.child(theCategoryId).child("name").setValue(newName)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(getContext(), "The category updated", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Category updated", Toast.LENGTH_SHORT).show();
                     Navigation.findNavController(getView()).navigateUp();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Failed to update error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
+
+
