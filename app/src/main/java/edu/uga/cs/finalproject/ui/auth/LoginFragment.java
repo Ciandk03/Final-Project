@@ -33,8 +33,7 @@ public class LoginFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
@@ -49,20 +48,25 @@ public class LoginFragment extends Fragment {
         loginButton = view.findViewById(R.id.buttonLogin);
         registerTextView = view.findViewById(R.id.textViewRegister);
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loginUser();
-            }
-        });
 
-        registerTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NavController navController = Navigation.findNavController(v);
-                navController.navigate(R.id.action_loginFragment_to_registerFragment);
-            }
+        if (savedInstanceState != null) {
+            emailEditText.setText(savedInstanceState.getString("savedEmail", ""));
+            passwordEditText.setText(savedInstanceState.getString("savedPassword", ""));
+        }
+
+        loginButton.setOnClickListener(v -> loginUser());
+
+        registerTextView.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.action_loginFragment_to_registerFragment);
         });
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedEmail", emailEditText.getText().toString());
+        outState.putString("savedPassword", passwordEditText.getText().toString());
     }
 
     private void loginUser() {
@@ -85,11 +89,11 @@ public class LoginFragment extends Fragment {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             Toast.makeText(getActivity(), "Login successful", Toast.LENGTH_SHORT).show();
-                            // Navigate to home or pop back stack
                             Navigation.findNavController(getView())
                                     .navigate(R.id.action_loginFragment_to_categoryListFragment);
                         } else {
-                            Toast.makeText(getActivity(), "Authentication failed: " + task.getException().getMessage(),
+                            Toast.makeText(getActivity(),
+                                    "Authentication failed: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }

@@ -1,7 +1,6 @@
 package edu.uga.cs.finalproject.ui;
 
 /*
-
  - Contains TabLayout + ViewPager2 with Pending (buys/sales) & Completed
 */
 
@@ -30,6 +29,8 @@ public class TransactionsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
+        super.onViewCreated(view, savedInstanceState);
+
         tabLayout = view.findViewById(R.id.transTabLayout);
         pager = view.findViewById(R.id.transViewPager);
 
@@ -38,5 +39,19 @@ public class TransactionsFragment extends Fragment {
             if(position==0) tab.setText("Pending");
             else tab.setText("Completed");
         }).attach();
+
+        if (savedInstanceState != null) {
+            int savedPage = savedInstanceState.getInt("savedPage", 0);
+            pager.setCurrentItem(savedPage, false);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (pager != null) {
+            outState.putInt("savedPage", pager.getCurrentItem());
+        }
     }
 }
+

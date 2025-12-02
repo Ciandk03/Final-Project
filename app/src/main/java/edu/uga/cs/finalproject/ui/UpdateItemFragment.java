@@ -87,6 +87,15 @@ public class UpdateItemFragment extends Fragment {
             }
         }
 
+        if (theSavedInstanceState != null) {
+            theNameEditText.setText(theSavedInstanceState.getString("savedName", theNameEditText.getText().toString()));
+            theDescriptionEditText.setText(theSavedInstanceState.getString("savedDescription", theDescriptionEditText.getText().toString()));
+            boolean savedFree = theSavedInstanceState.getBoolean("savedIsFree", theFreeCheckBox.isChecked());
+            theFreeCheckBox.setChecked(savedFree);
+            thePriceEditText.setText(theSavedInstanceState.getString("savedPrice", thePriceEditText.getText().toString()));
+            thePriceEditText.setEnabled(!savedFree);
+        }
+
         theFreeCheckBox.setOnCheckedChangeListener((theButtonView, theIsChecked) -> {
             if (theIsChecked) {
                 thePriceEditText.setText("0.00");
@@ -97,6 +106,15 @@ public class UpdateItemFragment extends Fragment {
         });
 
         theUpdateButton.setOnClickListener(theV -> updateItem());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedName", theNameEditText.getText().toString());
+        outState.putString("savedDescription", theDescriptionEditText.getText().toString());
+        outState.putString("savedPrice", thePriceEditText.getText().toString());
+        outState.putBoolean("savedIsFree", theFreeCheckBox.isChecked());
     }
 
     private void updateItem() {
@@ -131,12 +149,13 @@ public class UpdateItemFragment extends Fragment {
             return;
         }
 
-        theDatabase.child(theItemId).child("The Name").setValue(theName);
-        theDatabase.child(theItemId).child("The Description").setValue(theDescription);
-        theDatabase.child(theItemId).child("The Price").setValue(thePrice);
-        theDatabase.child(theItemId).child("Free").setValue(theIsFree);
+        theDatabase.child(theItemId).child("name").setValue(theName);
+        theDatabase.child(theItemId).child("description").setValue(theDescription);
+        theDatabase.child(theItemId).child("price").setValue(thePrice);
+        theDatabase.child(theItemId).child("free").setValue(theIsFree);
 
         Toast.makeText(getContext(), "The item updated", Toast.LENGTH_SHORT).show();
         Navigation.findNavController(requireView()).navigateUp();
     }
 }
+

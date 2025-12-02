@@ -40,17 +40,18 @@ public class MyItemsFragment extends Fragment {
     private DatabaseReference mDatabase;
     private FirebaseUser currentUser;
 
-    public MyItemsFragment() {
-    }
+    public MyItemsFragment() {}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_my_items, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
         mDatabase = FirebaseDatabase.getInstance().getReference("items");
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
@@ -58,19 +59,78 @@ public class MyItemsFragment extends Fragment {
         emptyView = view.findViewById(R.id.emptyView);
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new ItemAdapter(items, item -> {
-            Bundle b = new Bundle();
-            b.putString("itemId", item.getId());
-            Navigation.findNavController(view).navigate(R.id.action_global_itemDetailFragment, b);
+        String currentUserId = currentUser != null ? currentUser.getUid() : null;
+
+        adapter = new ItemAdapter(items, currentUserId, new ItemAdapter.theOnItemAction() {
+            @Override
+            public void onClick(Item theItem) {
+                Bundle b = new Bundle();
+                b.putString("itemId", theItem.getId());
+                Navigation.findNavController(view)
+                        .navigate(R.id.action_global_itemDetailFragment, b);
+            }
+
+            @Override
+            public void onDelete(Item theItem) {
+                // Optional: allow deleting directly from "My Items"
+                mDatabase.child(theItem.getId()).removeValue()
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(getContext(), "Item deleted", Toast.LENGTH_SHORT).show();
+                            items.remove(theItem);
+                            adapter.notifyDataSetChanged();
+                        })
+                        .addOnFailureListener(e ->
+                                Toast.makeText(getContext(), "Delete failed", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onEdit(Item theItem) {
+                // Optional: navigate to edit screen
+                Bundle b = new Bundle();
+                b.putString("itemId", theItem.getId());
+                b.putString("itemName", theItem.getName());
+                b.putDouble("itemPrice", theItem.getPrice());
+                Navigation.findNavController(view).navigate(R.id.action_itemList_to_editItem, b);
+            }
+
+            @Override
+            public void onBuy(Item theItem) {
+                // Not needed for "My Items" (owner view)
+            }
         });
         recycler.setAdapter(adapter);
 
-        if (currentUser != null) {
-            loadMyItems();
+        if (savedInstanceState != null) {
+            items.clear();
+            items.addAll((List<Item>) savedInstanceState.getSerializable("savedMyItems"));
+            adapter.notifyDataSetChanged();
+
+            int pos = savedInstanceState.getInt("scrollPosition", 0);
+            recycler.scrollToPosition(pos);
+
+            if (items.isEmpty()) {
+                emptyView.setVisibility(View.VISIBLE);
+                recycler.setVisibility(View.GONE);
+            } else {
+                emptyView.setVisibility(View.GONE);
+                recycler.setVisibility(View.VISIBLE);
+            }
         } else {
-            emptyView.setVisibility(View.VISIBLE);
-            emptyView.setText("Please login to view your items.");
+            if (currentUser != null) {
+                loadMyItems();
+            } else {
+                emptyView.setVisibility(View.VISIBLE);
+                emptyView.setText("Please login to view your items.");
+            }
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable("savedMyItems", new ArrayList<>(items));
+        int pos = ((LinearLayoutManager) recycler.getLayoutManager()).findFirstVisibleItemPosition();
+        outState.putInt("scrollPosition", pos);
     }
 
     private void loadMyItems() {
@@ -85,7 +145,6 @@ public class MyItemsFragment extends Fragment {
                         items.add(item);
                     }
                 }
-                // Sort by date descending
                 Collections.sort(items, (o1, o2) -> Long.compare(o2.getCreatedAt(), o1.getCreatedAt()));
 
                 if (items.isEmpty()) {
@@ -105,3 +164,5 @@ public class MyItemsFragment extends Fragment {
         });
     }
 }
+
+

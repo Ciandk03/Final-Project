@@ -36,7 +36,7 @@ public class AddCategoryFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_add_category, container, false);
     }
 
@@ -48,12 +48,17 @@ public class AddCategoryFragment extends Fragment {
         categoryNameEditText = view.findViewById(R.id.editTextCategoryName);
         addCategoryButton = view.findViewById(R.id.buttonAddCategory);
 
-        addCategoryButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addCategory();
-            }
-        });
+        if (savedInstanceState != null) {
+            categoryNameEditText.setText(savedInstanceState.getString("savedCategoryName", ""));
+        }
+
+        addCategoryButton.setOnClickListener(v -> addCategory());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedCategoryName", categoryNameEditText.getText().toString());
     }
 
     private void addCategory() {
@@ -74,19 +79,14 @@ public class AddCategoryFragment extends Fragment {
         Category category = new Category(key, name, currentUser.getUid());
 
         mDatabase.child(key).setValue(category)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(getContext(), "Category added", Toast.LENGTH_SHORT).show();
-                        Navigation.findNavController(getView()).navigateUp();
-                    }
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Category added", Toast.LENGTH_SHORT).show();
+                    Navigation.findNavController(getView()).navigateUp();
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(getContext(), "Failed to add category: " + e.getMessage(), Toast.LENGTH_SHORT)
-                                .show();
-                    }
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Failed to add category: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 }
+

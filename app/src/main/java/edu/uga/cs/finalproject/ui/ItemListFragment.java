@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -29,6 +30,7 @@ import java.util.List;
 import edu.uga.cs.finalproject.R;
 import edu.uga.cs.finalproject.adapters.ItemAdapter;
 import edu.uga.cs.finalproject.models.Item;
+import edu.uga.cs.finalproject.models.Transaction;
 
 public class ItemListFragment extends Fragment {
 
@@ -48,6 +50,8 @@ public class ItemListFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View theView, @Nullable Bundle theSavedInstanceState) {
+        super.onViewCreated(theView, theSavedInstanceState);
+
         if (getArguments() != null) {
             theCategoryId = getArguments().getString("categoryId");
             theCategoryName = getArguments().getString("categoryName");
@@ -82,6 +86,44 @@ public class ItemListFragment extends Fragment {
                             Toast.makeText(getContext(), "Failed to delete item: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         });
             }
+
+            @Override
+            public void onEdit(Item theItem) {
+                Bundle b = new Bundle();
+                b.putString("itemId", theItem.getId());
+                b.putString("itemName", theItem.getName());
+                b.putDouble("itemPrice", theItem.getPrice());
+                Navigation.findNavController(theView).navigate(R.id.action_itemList_to_editItem, b);
+            }
+
+            @Override
+            public void onBuy(Item theItem) {
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (currentUser == null) {
+                    Toast.makeText(getContext(), "You must be logged in to buy", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                DatabaseReference transRef = FirebaseDatabase.getInstance().getReference("transactions");
+                String transId = transRef.push().getKey();
+
+                Transaction t = new Transaction(
+                        transId,
+                        theItem.getId(),
+                        theItem.getName(),
+                        theItem.getCategoryName(),
+                        theItem.getPrice(),
+                        theItem.getSellerId(),
+                        theItem.getSellerName(),
+                        currentUser.getUid(),
+                        currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "Unknown"
+                );
+
+                transRef.child(transId).setValue(t);
+                theDatabase.child(theItem.getId()).child("status").setValue("PENDING");
+
+                Toast.makeText(getContext(), "Request placed!", Toast.LENGTH_SHORT).show();
+            }
         });
 
         theRecycler.setAdapter(theAdapter);
@@ -94,7 +136,27 @@ public class ItemListFragment extends Fragment {
             Navigation.findNavController(theV).navigate(R.id.action_itemList_to_addItem, theBundle);
         });
 
-        loadItems();
+        if (theSavedInstanceState != null) {
+            theCategoryId = theSavedInstanceState.getString("savedCategoryId", theCategoryId);
+            theCategoryName = theSavedInstanceState.getString("savedCategoryName", theCategoryName);
+            theItems.clear();
+            theItems.addAll((List<Item>) theSavedInstanceState.getSerializable("savedItems"));
+            theAdapter.notifyDataSetChanged();
+            int pos = theSavedInstanceState.getInt("scrollPosition", 0);
+            theRecycler.scrollToPosition(pos);
+        } else {
+            loadItems();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("savedCategoryId", theCategoryId);
+        outState.putString("savedCategoryName", theCategoryName);
+        outState.putSerializable("savedItems", new ArrayList<>(theItems));
+        int pos = ((LinearLayoutManager) theRecycler.getLayoutManager()).findFirstVisibleItemPosition();
+        outState.putInt("scrollPosition", pos);
     }
 
     private void loadItems() {
