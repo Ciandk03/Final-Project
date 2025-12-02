@@ -43,7 +43,7 @@ public class CategoryListFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_category_list, container, false);
     }
 
@@ -70,7 +70,7 @@ public class CategoryListFragment extends Fragment {
                 Bundle b = new Bundle();
                 b.putString("categoryId", category.getId());
                 b.putString("categoryName", category.getName());
-                Toast.makeText(getContext(), "Edit not implemented yet", Toast.LENGTH_SHORT).show();
+                Navigation.findNavController(view).navigate(R.id.action_category_to_editCategory, b);
             }
 
             @Override
@@ -132,4 +132,3 @@ public class CategoryListFragment extends Fragment {
         void onCheck(boolean isEmpty);
     }
 }
-

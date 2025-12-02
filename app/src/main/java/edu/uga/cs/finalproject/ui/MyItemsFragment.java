@@ -53,15 +53,44 @@ public class MyItemsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         mDatabase = FirebaseDatabase.getInstance().getReference("items");
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserId = (currentUser != null) ? currentUser.getUid() : null;
 
         recycler = view.findViewById(R.id.myItemsRecycler);
         emptyView = view.findViewById(R.id.emptyView);
         recycler.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new ItemAdapter(items, item -> {
-            Bundle b = new Bundle();
-            b.putString("itemId", item.getId());
-            Navigation.findNavController(view).navigate(R.id.action_global_itemDetailFragment, b);
+        adapter = new ItemAdapter(items, currentUserId, new ItemAdapter.theOnItemAction() {
+            @Override
+            public void onClick(Item item) {
+                Bundle b = new Bundle();
+                b.putString("itemId", item.getId());
+                Navigation.findNavController(view).navigate(R.id.action_global_itemDetailFragment, b);
+            }
+
+            @Override
+            public void onDelete(Item item) {
+                if (item.getId() != null) {
+                    mDatabase.child(item.getId()).removeValue()
+                            .addOnSuccessListener(
+                                    aVoid -> Toast.makeText(getContext(), "Item deleted.", Toast.LENGTH_SHORT).show())
+                            .addOnFailureListener(e -> Toast
+                                    .makeText(getContext(), "Failed to delete item.", Toast.LENGTH_SHORT).show());
+                }
+            }
+
+            @Override
+            public void onEdit(Item item) {
+                Bundle b = new Bundle();
+                b.putString("itemId", item.getId());
+                b.putString("itemName", item.getName());
+                b.putDouble("itemPrice", item.getPrice());
+                Navigation.findNavController(view).navigate(R.id.action_myItems_to_editItem, b);
+            }
+
+            @Override
+            public void onBuy(Item item) {
+                // Not applicable in this fragment
+            }
         });
         recycler.setAdapter(adapter);
 

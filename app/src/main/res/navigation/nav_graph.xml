@@ -18,6 +18,10 @@
             android:id="@+id/action_category_to_itemList"
             app:destination="@id/itemListFragment" />
 
+        <action
+            android:id="@+id/action_category_to_editCategory"
+            app:destination="@id/editCategoryFragment" />
+
         <!-- NEW: logout action -->
         <action
             android:id="@+id/action_categoryListFragment_to_loginFragment"
@@ -30,6 +34,14 @@
         android:id="@+id/addCategoryFragment"
         android:name="edu.uga.cs.finalproject.ui.AddCategoryFragment"
         android:label="Add Category" />
+
+    <fragment
+        android:id="@+id/editCategoryFragment"
+        android:name="edu.uga.cs.finalproject.ui.EditCategoryFragment"
+        android:label="Edit Category">
+        <argument android:name="categoryId" app:argType="string" />
+        <argument android:name="categoryName" app:argType="string" />
+    </fragment>
 
     <!-- Items in a category -->
     <fragment
@@ -85,7 +97,12 @@
     <fragment
         android:id="@+id/myItemsFragment"
         android:name="edu.uga.cs.finalproject.ui.MyItemsFragment"
-        android:label="My Items" />
+        android:label="My Items">
+        <!-- Action to edit item -->
+        <action
+            android:id="@+id/action_myItems_to_editItem"
+            app:destination="@id/editItemFragment" />
+    </fragment>
 
     <!-- Profile -->
     <fragment
